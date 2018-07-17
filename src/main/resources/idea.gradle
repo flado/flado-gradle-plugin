@@ -1,0 +1,11 @@
+apply plugin: 'idea'
+
+afterEvaluate {
+  idea {
+    module {
+      testSourceDirs = testSourceDirs + sourceSets.testIntegration.allSource.srcDirs.flatten() as LinkedHashSet
+      outputDir = new File("${buildDir}/classes/idea/main")
+      testOutputDir = new File("${buildDir}/classes/idea/test")
+    }
+  }
+}

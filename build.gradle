@@ -1,0 +1,76 @@
+//NOTE: extra props for all plugin versions applied by 'au.com.suncorp.data.services.common.gradle' plugin
+ext {
+    springBootVersion = '1.5.9.RELEASE'
+    depManagementVersion = '1.0.4.RELEASE'
+}
+
+buildscript {
+    ext {
+        nebulaReleaseVersion = '6.0.0'
+    }
+    repositories {
+        maven { url 'https://nexus.int.corp.sun/content/groups/public' }
+        maven { url 'https://nexus.int.corp.sun/content/repositories/inhouse' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath("com.netflix.nebula:nebula-release-plugin:${nebulaReleaseVersion}")
+    }
+}
+
+apply plugin: 'groovy'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: 'nebula.release'
+
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+    testCompile 'junit:junit:4.12'
+    // NOTE: dependencies declared here are available in the project's buildscript.dependencies.classpath
+    // by default when 'au.com.flado.gradle' plugin is applied
+    runtime "io.spring.gradle:dependency-management-plugin:${depManagementVersion}"
+    runtime "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
+}
+
+
+repositories {
+    maven { url 'https://nexus.int.corp.sun/content/groups/public' }
+    maven { url 'https://nexus.int.corp.sun/content/repositories/inhouse' }
+    mavenCentral()
+}
+
+publishing {
+    repositories {
+        maven {
+            url "http://nexus/content/repositories/cdto-api-data-streaming${project.version.toString().endsWith('-SNAPSHOT') ? '.snapshot' : ''}"
+            credentials {
+                username "${nexusUser}"
+                password "${nexusPassword}"
+            }
+        }
+        mavenLocal()
+    }
+
+    publications {
+        mavenJava(MavenPublication) {
+            groupId project.group
+            artifactId project.name
+            version project.version
+
+            from components.java
+        }
+    }
+}
+
+release {
+   // Let the default versioning strategy be the maven style -SNAPSHOT, instead of nebula's devSnapshot
+   defaultVersionStrategy = org.ajoberstar.gradle.git.release.opinion.Strategies.SNAPSHOT
+}
+
+nebulaRelease {
+   // addReleaseBranchPattern(/release\/\d+\.\d+\.\d+/)  // handle non-standard 'release/x.y.z' naming
+   addReleaseBranchPattern(/development/)  // handle non-standard 'release/x.y.z' naming
+}
+
+tasks.release.finalizedBy tasks.publish

@@ -1,0 +1,19 @@
+repositories {
+  maven {
+    url "https://nexus/content/groups/public/"
+  }
+  maven {
+    credentials {
+      username "nexus_username"
+      password "nexus_password"
+    }
+    url "https://nexus/content/repositories/repo-name"
+  }
+  maven {
+    credentials {
+      username "nexus_username"
+      password "nexus_password"
+    }
+    url "https://nexus/content/repositories/repo-name.snapshot"
+  }
+}

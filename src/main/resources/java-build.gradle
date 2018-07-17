@@ -1,0 +1,94 @@
+apply plugin: 'java'
+apply plugin: 'jacoco'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    resolutionStrategy.cacheDynamicVersionsFor 0, 'minutes'
+}
+
+sourceSets {
+  testIntegration {
+    delete "$buildDir/classes/testIntegration"
+    java.srcDir file('src/testIntegration/java')
+    resources.srcDir file('src/testIntegration/resources')
+  }
+}
+
+
+task testIntegration(type: Test) {
+  group = LifecycleBasePlugin.VERIFICATION_GROUP
+  description = 'Runs the integration tests.'
+  jacoco {
+      destinationFile = file("$buildDir/jacoco/testIntegration.exec")
+      classDumpDir = file("$buildDir/classes/testIntegration")
+  }
+  testClassesDir = sourceSets.testIntegration.output.classesDir
+  classpath = sourceSets.testIntegration.runtimeClasspath
+  mustRunAfter tasks.test
+}
+
+
+check.dependsOn testIntegration
+
+dependencies {
+  testIntegrationCompile sourceSets.main.output
+  testIntegrationCompile configurations.testCompile
+  testIntegrationCompile sourceSets.test.output
+  testIntegrationRuntime configurations.testRuntime
+}
+
+task integration(type: Test) {
+  testClassesDir = sourceSets.testIntegration.output.classesDir
+  classpath = sourceSets.testIntegration.runtimeClasspath
+}
+
+test {
+  finalizedBy jacocoTestReport
+}
+
+testIntegration {
+    finalizedBy jacocoTestReport
+}
+
+jacoco {
+    toolVersion = '0.8.0'
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                counter = 'BRANCH'
+                value = 'COVEREDRATIO'
+                minimum = 0.5
+            }
+        }
+        rule {
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.11
+            }
+        }
+    }
+    executionData(test, testIntegration)
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled false
+        csv.enabled false
+        html {
+            enabled true
+            destination "${buildDir}/reports/jacoco"
+        }
+    }
+    executionData(test, testIntegration)
+}
+
+jacocoTestCoverageVerification.dependsOn testIntegration
+check.dependsOn jacocoTestReport, jacocoTestCoverageVerification
+
